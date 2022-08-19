@@ -25,7 +25,7 @@ app.use(express.json());
 app.use(cors({ exposedHeaders: ["x-token-access", "x-total-count"] }));
 
 app.get("/", (req, res) => {
-  res.status(200).send("<h1>API Backend for Bootcamp Project</h1>");
+  res.status(200).send("<h1>API Server JCWDLS001-02</h1>");
 });
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static("public"));
@@ -36,5 +36,6 @@ app.use("/admin", adminRoutes);
 app.use("/profile", profileRoutes);
 app.use("/transaction", transactionRoutes);
 app.use("/raja-ongkir", rajaOngkirRoutes);
-
-app.listen(PORT, () => console.log(`API running on Port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`API Server JCWDLS001-02 Running on Port ${PORT}`)
+);

@@ -14,6 +14,98 @@ const dateGenerator = (full) => {
   return `${year}-${month}-${date} ${hours}:${minutes}`;
 };
 
+const expireDateGenerator = (time) => {
+  let timer = time ? time : 1;
+  const date = new Date();
+  date.setDate(date.getDate() + timer);
+  return date;
+};
+
+// status sebelumnya dari order, id dari order
+const dropEventGenerator = (status, id, carts) => {
+  let result;
+  switch (status) {
+    case 1:
+      return [`DROP EVENT IF EXISTS deadline_proses_resep_${id};`];
+    case 2:
+      result = [`DROP EVENT IF EXISTS deadline_pesanan_resep_${id};`];
+      for (let i = 0; i < carts.length; i++) {
+        result = [
+          ...result,
+          `DROP EVENT IF EXISTS deadline_pesanan_resep_${id}_${i};`,
+        ];
+      }
+      return result;
+    case 3:
+      result = [`DROP EVENT IF EXISTS deadline_pembayaran_${id};`];
+      for (let i = 0; i < carts.length; i++) {
+        result = [
+          ...result,
+          `DROP EVENT IF EXISTS deadline_pembayaran_${id}_${i};`,
+        ];
+      }
+      return result;
+    case 4:
+      result = [`DROP EVENT IF EXISTS deadline_proses_pesanan_${id};`];
+      for (let i = 0; i < carts.length; i++) {
+        result = [
+          ...result,
+          `DROP EVENT IF EXISTS deadline_proses_pesanan_${id}_${i};`,
+        ];
+      }
+      return result;
+    default:
+      return null;
+  }
+};
+
+// status order terbaru, id dari order, carts isi order di checkout_cart
+const expireEventGenerator = (status, id, carts) => {
+  let result;
+  carts = carts ? carts : [];
+  switch (status) {
+    case 1:
+      return [
+        `CREATE EVENT IF NOT EXISTS deadline_proses_resep_${id} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 DAY COMMENT 'deadline proses resep dari admin, maksimal 1 hari dari request order' DO UPDATE orders SET status = 7, pesan = "Admin tidak dapat memproses pesanan kamu" WHERE id = ${id};`,
+      ];
+    case 2:
+      result = [
+        `CREATE EVENT IF NOT EXISTS deadline_pesanan_resep_${id} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 DAY DO UPDATE orders SET status = 7, pesan = "Kamu tidak melanjutkan transaksi sebelum batas waktu yang telah ditentukan" WHERE id = ${id};`,
+      ];
+      for (let i = 0; i < carts.length; i++) {
+        result = [
+          ...result,
+          `CREATE EVENT IF NOT EXISTS deadline_pesanan_resep_${id}_${i} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 DAY DO UPDATE product_stock SET stock = stock + ${carts[i].qty} WHERE id = ${carts[i].stock_id};`,
+        ];
+      }
+      return result;
+    case 3:
+      result = [
+        `CREATE EVENT IF NOT EXISTS deadline_pembayaran_${id} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 DAY DO UPDATE orders SET status = 7, pesan = "Kamu tidak membayar transaksi sebelum batas waktu yang telah ditentukan" WHERE id = ${id};`,
+      ];
+      for (let i = 0; i < carts.length; i++) {
+        result = [
+          ...result,
+          `CREATE EVENT IF NOT EXISTS deadline_pembayaran_${id}_${i} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 DAY DO UPDATE product_stock SET stock = stock + ${carts[i].qty} WHERE id = ${carts[i].stock_id};`,
+        ];
+      }
+      return result;
+    case 4:
+      result = [
+        `CREATE EVENT IF NOT EXISTS deadline_proses_pesanan_${id} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 DAY DO UPDATE orders SET status = 7, pesan = "Admin tidak dapat memproses pesanan kamu" WHERE id = ${id};`,
+      ];
+      for (let i = 0; i < carts.length; i++) {
+        result = [
+          ...result,
+          `CREATE EVENT IF NOT EXISTS deadline_proses_pesanan_${id}_${i} ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 DAY DO UPDATE product_stock SET stock = stock + ${carts[i].qty} WHERE id = ${carts[i].stock_id};`,
+        ];
+      }
+      return result;
+    default:
+      return null;
+  }
+};
+
 userIdCodeGenerator = (id) => {
   const idCode = [0, 0, 0];
   let code = "";
@@ -46,7 +138,6 @@ const codeGenerator = (type, date, id) => {
 
 const photoNameGenerator = (file, dir, suffix) => {
   const defaultPath = "./public";
-  console.log(file);
   fs.access(defaultPath + dir, (error) => {
     if (error) fs.mkdirSync(defaultPath + dir);
   });
@@ -64,7 +155,6 @@ const photoNameGenerator = (file, dir, suffix) => {
 };
 
 const productCodeGenerator = (category, golongan, id) => {
-  console.log({ category, golongan, id });
   const code = [];
   if (category == 1) {
     code[0] = "O";
@@ -132,4 +222,7 @@ module.exports = {
   codeGenerator,
   productCodeGenerator,
   photoNameGenerator,
+  expireDateGenerator,
+  expireEventGenerator,
+  dropEventGenerator,
 };

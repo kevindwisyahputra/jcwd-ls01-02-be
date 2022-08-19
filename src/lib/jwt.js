@@ -19,13 +19,13 @@ const newDataToken = (data) => {
 */
 const newCache = (data) => {
   const { id } = data;
-  const expirationTime = 300;
+  const expirationTime = 600;
   myCache.set(id, data, expirationTime);
 };
 
 // createJWTEmail function : function yang digunakan untuk membuat jwt token verifikasi akun
 const createJWTEmail = (data) =>
-  jwt.sign(data, process.env.JWT_SECRET_EMAIL, { expiresIn: "5m" });
+  jwt.sign(data, process.env.JWT_SECRET_EMAIL, { expiresIn: "10m" });
 
 // createJWTAccess function : function yang digunakan untuk membuat jwt token akses login
 const createJWTAccess = (data) =>
@@ -42,7 +42,6 @@ const createJWTAccess = (data) =>
   keeplogin, verification user, changepassword, membuat order, dsb.
 */
 const verifyToken = async (req, res, next) => {
-  console.log("Ini Token", req.headers.authorization);
   const authHeader = req.headers.authorization.split(" ");
   const token = authHeader[0];
   const verification = authHeader[1];
@@ -69,8 +68,6 @@ const verifyLastToken = async (req, res, next) => {
   if (createdAt === cache.createdAt) {
     next();
   } else {
-    console.log(`gagal lewat verify last token`);
-
     return res.status(401).send({ message: "New token already requested!" });
   }
 };

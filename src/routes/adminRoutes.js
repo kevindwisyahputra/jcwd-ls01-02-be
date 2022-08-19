@@ -13,8 +13,13 @@ const {
   getReportController,
   getNameController,
   addStockController,
+  getProductStockController,
 } = require("../controllers");
-const { dateGenerator, codeGenerator } = require("../lib/codeGenerator");
+const {
+  dateGenerator,
+  codeGenerator,
+  expireDateGenerator,
+} = require("../lib/codeGenerator");
 const multer = require("multer");
 const { imageProcess } = require("../lib/upload");
 const storage = multer.memoryStorage();
@@ -41,43 +46,6 @@ Router.get("/product-details", getProductDetailsController);
 Router.delete("/delete-product", deleteProductController);
 Router.get("/get-name", getNameController);
 Router.post("/add-stock", addStockController);
-
-Router.post("/upload", uploads.single("file"), async (req, res) => {
-  try {
-    console.log(req.file);
-    await imageProcess(req.file, "/products", "PRODUCT");
-    return res.status(200).send("jpg");
-  } catch (error) {
-    console.log(error);
-    return res.status(500).send(error);
-  }
-});
-Router.post("/order", async (req, res) => {
-  // let { id } = req.query;
-  // let { id: user_id } = req.user;
-  let conn, sql;
-  // let { prescription_photo, user_id } = req.body;
-  try {
-    conn = dbCon.promise();
-    let date = dateGenerator();
-    let prescription_photo = "/prescriptions/resep.jpg";
-    let user_id = 61;
-    let insertData = {
-      user_id,
-      prescription_photo,
-      status: 1,
-      transaction_code: codeGenerator("RESEP", date, user_id),
-    };
-    sql = `INSERT INTO orders SET ?`;
-    await conn.query(sql, insertData);
-
-    return res.status(200).send("succeded");
-  } catch (error) {
-    console.log(error);
-    return res.status(500).send("failed");
-  }
-});
-
 Router.post("/stok", async (req, res) => {
   let conn, sql;
   try {
@@ -128,4 +96,5 @@ Router.post("/stok", async (req, res) => {
   }
 });
 Router.get("/report", getReportController);
+Router.get("/product-stock", getProductStockController);
 module.exports = Router;
